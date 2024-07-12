@@ -34,3 +34,6 @@ services:
     restart: always
     depends_on:
       - db
+  redis:
+    container_name: redis
+    image: redis:6.2-alpine

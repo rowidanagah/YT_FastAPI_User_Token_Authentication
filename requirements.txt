@@ -20,7 +20,7 @@ MarkupSafe==2.0.1
 mypy-extensions==0.4.3
 pathspec==0.8.1
 promise==2.3
-psycopg2==2.9.1
+psycopg2-binary==2.9.1
 pycparser==2.20
 pydantic==1.8.2
 PyJWT==2.1.0
@@ -34,5 +34,5 @@ six==1.16.0
 SQLAlchemy==1.4.20
 starlette==0.14.2
 toml==0.10.2
-typing-extensions==3.10.0.0
+typing-extensions>=4.0.0
 uvicorn==0.14.0
