@@ -2,10 +2,12 @@ from datetime import timedelta
 
 import bcrypt
 import graphene
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from graphql import GraphQLError
 from jwt import PyJWTError
 from starlette.graphql import GraphQLApp
+from celery_worker import create_task
+from fastapi.responses import JSONResponse
 
 import models
 from db_conf import db_session
@@ -15,6 +17,15 @@ from schemas import PostModel, PostSchema, UserSchema
 db = db_session.session_factory()
 
 app = FastAPI()
+
+
+@app.post("/ex1")
+def run_task(data=Body(...)):
+    amount = int(data["amount"])
+    x = data["x"]
+    y = data["y"]
+    task = create_task.delay(amount, x, y)
+    return JSONResponse({"Result": task.get()})
 
 
 class Query(graphene.ObjectType):
@@ -53,11 +64,17 @@ class AuthenticateUser(graphene.Mutation):
 
         user = UserSchema(username=username, password=password)
 
-        db_user_info = db.query(models.User).filter(models.User.username == username).first()
+        db_user_info = (
+            db.query(models.User).filter(models.User.username == username).first()
+        )
 
-        if bcrypt.checkpw(user.password.encode("utf-8"), db_user_info.password.encode("utf-8")):
+        if bcrypt.checkpw(
+            user.password.encode("utf-8"), db_user_info.password.encode("utf-8")
+        ):
             access_token_expires = timedelta(minutes=60)
-            access_token = create_access_token(data={"user": username}, expires_delta=access_token_expires)
+            access_token = create_access_token(
+                data={"user": username}, expires_delta=access_token_expires
+            )
             ok = True
             return AuthenticateUser(ok=ok, token=access_token)
 
@@ -141,4 +158,6 @@ class PostMutations(graphene.ObjectType):
     create_new_post = CreateNewPost.Field()
 
 
-app.add_route("/graphql", GraphQLApp(schema=graphene.Schema(query=Query, mutation=PostMutations)))
+app.add_route(
+    "/graphql", GraphQLApp(schema=graphene.Schema(query=Query, mutation=PostMutations))
+)
